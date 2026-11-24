@@ -1,6 +1,7 @@
 import asyncio
 import html
 import os
+from aiohttp import web
 import aiosqlite
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
@@ -964,11 +965,32 @@ async def cmd_next_turn(message: Message) -> None:
         parse_mode="HTML",
     )
 
+async def _health_handler(request: web.Request) -> web.Response:
+    return web.Response(text="OK")
+
+
+
+async def start_http_server() -> web.AppRunner:
+    port = int(os.environ.get("PORT", "8000"))
+    app = web.Application()
+    app.router.add_get("/", _health_handler)
+    app.router.add_get("/health", _health_handler)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, host="0.0.0.0", port=port)
+    await site.start()
+    return runner
 
 async def main() -> None:
     await init_db()
     asyncio.create_task(hourly_worker())
-    await dp.start_polling(bot)
+        runner = await start_http_server()
+        try:
+   await dp.start_polling(bot)
+        finally:
+        await runner.cleanup()
+
 
 
 if __name__ == "__main__":
