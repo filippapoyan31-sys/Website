@@ -986,10 +986,11 @@ async def main() -> None:
     await init_db()
     asyncio.create_task(hourly_worker())
     runner = await start_http_server()
-        try:
-   await dp.start_polling(bot)
-        finally:
+    try:
+        await dp.start_polling(bot)
+    finally:
         await runner.cleanup()
+
 
 
 
